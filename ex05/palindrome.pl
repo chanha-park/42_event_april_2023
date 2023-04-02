@@ -9,6 +9,10 @@ if (defined $input)
 
     chomp $input;
 
+    $input = lc $input;
+
+    $input =~ s/\s//g;
+
     my $rev = reverse $input;
 
     if ($input eq $rev)
