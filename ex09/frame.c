@@ -45,12 +45,12 @@ print_line(char* str, size_t width) {
 
 void
 print_internal(char* str, size_t max_len) {
+  while (isspace(*str))
+    ++str;
   if (*str) {
-    printf("*");
-    while (isspace(*str))
-      ++str;
+    printf("* ");
     str = print_line(str, max_len);
-    printf("*\n");
+    printf(" *\n");
     print_internal(str, max_len);
   }
 }
@@ -60,10 +60,10 @@ print_frame(char* str) {
   size_t max_len;
 
   max_len = get_max_len(str);
-  repeat_char('*', max_len + 2);
+  repeat_char('*', max_len + 4);
   printf("\n");
   print_internal(str, max_len);
-  repeat_char('*', max_len + 2);
+  repeat_char('*', max_len + 4);
   printf("\n");
 }
 
