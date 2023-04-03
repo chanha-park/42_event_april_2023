@@ -1,82 +1,52 @@
-{-# OPTIONS -fno-warn-missing-signatures #-}
+{-# OPTIONS -Wall -Wextra #-}
 {-# LANGUAGE OverloadedStrings #-}
 
--- cabal install --lib HaskellNet
--- cabal install --lib HaskellNet-SSL
-
-import           Network.HaskellNet.SMTP
-import           Network.HaskellNet.SMTP.SSL
-import           Network.HaskellNet.Auth
-import           Network.Mail.Mime
-import qualified Data.Text as T
-import qualified Data.ByteString as S
-import qualified Data.ByteString.Lazy as B
+import Data.Text.Internal qualified
+import Data.Text.Lazy qualified
+import Network.HaskellNet.Auth
+import Network.HaskellNet.SMTP
+import Network.HaskellNet.SMTP.SSL
+import Network.Mail.Mime
 
 -- | Your settings
-server       = "smtp.naver.com"
-port         = toEnum 587
-username     = "foo"
-password     = "bar" -- need fix
-authType     = PLAIN
-from         = "foo@bar.com"
-to           = "hello@world.com"
-subject      = "Network.HaskellNet.SMTP Test :)"
-plainBody    = "Hello world!"
-htmlBody     = "<html><head></head><body><h1>Hello <i>world!</i></h1></body></html>"
-attachments  = [("application/pdf", "../../inception.pdf"), ("text/plain", "./smtp.hs")] -- example [("application/octet-stream", "/path/to/file1.tar.gz), ("application/pdf", "/path/to/file2.pdf")]
+server :: String
+server = "smtp.naver.com"
 
--- | Send plain text mail
-example1 = doSMTP server $ \conn -> do
-    let mail = simpleMail' to from subject plainBody
-    sendMail mail conn
+-- port         = toEnum 587
 
--- | With custom port number
-example2 = doSMTPPort server port $ \conn -> do
-    let mail = simpleMail' to from subject plainBody
-    sendMail mail conn
+username :: Network.HaskellNet.Auth.UserName
+username = "foo"
 
--- | Manually open and close the connection
-example3 = do
-    conn <- connectSMTP server
-    let mail = simpleMail' to from subject plainBody
-    sendMail mail conn
-    closeSMTP conn
+password :: Network.HaskellNet.Auth.Password
+password = "bar"
 
--- | Send mime mail
-example4 = doSMTP server $ \conn -> do
-    mail <-  simpleMail to from subject plainBody htmlBody []
-    sendMail mail conn
+authType :: Network.HaskellNet.Auth.AuthType
+authType = Network.HaskellNet.Auth.PLAIN
 
--- | With file attachments (modify the `attachments` binding)
-example5 = doSMTP server $ \conn -> do
-    mail <-  simpleMail to from subject plainBody htmlBody attachments
-    sendMail mail conn
+from :: Network.Mail.Mime.Address
+from = "foo@bar.com"
 
--- | With ByteString attachments
-bsContent = B.pack [43,43,43,43]
-example5_2 = doSMTP server $ \conn -> do
-    let mail = simpleMailInMemory to from subject plainBody htmlBody [("application/zip", "filename.zip", bsContent)]
-    sendMail mail conn
+to :: Network.Mail.Mime.Address
+to = "hello@world.com"
+
+subject :: Data.Text.Internal.Text
+subject = "Network.HaskellNet.SMTP Test :)"
+
+plainBody :: Data.Text.Lazy.Text
+plainBody = "Hello world!"
+
+htmlBody :: Data.Text.Lazy.Text
+htmlBody = "<html><head></head><body><h1>Hello <i>world!</i></h1></body></html>"
+
+attachments :: [(Data.Text.Internal.Text, FilePath)]
+attachments = [("application/zip", "~/Downloads/attachments.zip"), ("text/plain", "./smtp.hs")]
 
 -- | With authentication
-example6 = doSMTPSTARTTLS server $ \conn -> do
+main :: IO ()
+main = doSMTPSTARTTLS server $ \conn -> do
     authSuccess <- authenticate authType username password conn
     if authSuccess
-        then do mail <- simpleMail to from subject plainBody htmlBody attachments
-                sendMail mail conn
+        then do
+            mail <- simpleMail to from subject plainBody htmlBody attachments
+            sendMail mail conn
         else putStrLn "Authentication failed."
-
--- | Custom
-example7 = do
-    conn <- connectSMTPPort server port
-    let newMail = Mail (Address (Just "My Name") "from@test.org")
-                       [Address Nothing "to@test.org"]
-                       [Address Nothing "cc1@test.org", Address Nothing "cc2@test.org"]
-                       []
-                       [("Subject", subject)]
-                       [[htmlPart htmlBody, plainPart plainBody]]
-    newMail' <- addAttachments attachments newMail
-    sendMail newMail' conn
-    closeSMTP conn
-
-main = example6
