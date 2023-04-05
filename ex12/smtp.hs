@@ -32,7 +32,7 @@ main = do
     username <- getLine
     password <- runInputT mysettings (getPassword (Just '*') "login password: ")
 
-    let fromAddr = if elem '@' username then username else (username <> "@naver.com")
+    let fromAddr = if elem '@' username then username else username <> "@naver.com"
     putStrLn ("sender address: " <> fromAddr)
 
     let from = Network.Mail.Mime.Address Nothing . Data.Text.pack $ fromAddr
